@@ -1,41 +1,56 @@
-import { Component } from '../component';
-import { Product } from '../product/product';
+import {Component} from '../component';
+import {Product} from '../product/product';
+import {ProductData} from 'types';
 import html from './checkout.tpl.html';
-import { formatPrice } from '../../utils/helpers';
-import { cartService } from '../../services/cart.service';
-import { ProductData } from 'types';
+import {formatPrice, genUUID} from '../../utils/helpers';
+import {cartService} from '../../services/cart.service';
+import {analytics} from '../../services/analytic.service';
+
 
 class Checkout extends Component {
-  products!: ProductData[];
+    products!: ProductData[];
+    totalPrice?: number;
 
-  async render() {
-    this.products = await cartService.get();
+    async render() {
+        this.products = await cartService.get();
+        this.totalPrice = 0;
 
-    if (this.products.length < 1) {
-      this.view.root.classList.add('is__empty');
-      return;
+        if (this.products.length < 1) {
+            this.view.root.classList.add('is__empty');
+            return;
+        }
+
+        this.products.forEach((product) => {
+            const productComp = new Product(product, {isHorizontal: true});
+            productComp.render();
+            productComp.attach(this.view.cart);
+        });
+
+        this.totalPrice = this.products.reduce((acc, product) => (acc += product.salePriceU), 0);
+        this.view.price.innerText = formatPrice(this.totalPrice);
+
+        this.view.btnOrder.onclick = this._makeOrder.bind(this);
     }
 
-    this.products.forEach((product) => {
-      const productComp = new Product(product, { isHorizontal: true });
-      productComp.render();
-      productComp.attach(this.view.cart);
-    });
+    private async _makeOrder() {
+        await cartService.clear();
+        const orderId = genUUID();
+        const totalPrice = this.totalPrice ? Math.round(this.totalPrice / 1000) : 0;
+        const productsIds = this.products.map(product => product.id);
 
-    const totalPrice = this.products.reduce((acc, product) => (acc += product.salePriceU), 0);
-    this.view.price.innerText = formatPrice(totalPrice);
+        fetch('/api/makeOrder', {
+            method: 'POST',
+            body: JSON.stringify(this.products)
+        });
 
-    this.view.btnOrder.onclick = this._makeOrder.bind(this);
-  }
+        analytics.send({
+            type: 'purchase',
+            payload: {orderId, totalPrice, productsIds},
+            timestamp: Date.now()
+        })
 
-  private async _makeOrder() {
-    await cartService.clear();
-    fetch('/api/makeOrder', {
-      method: 'POST',
-      body: JSON.stringify(this.products)
-    });
-    window.location.href = '/?isSuccessOrder';
-  }
+        window.location.href = '/?isSuccessOrder';
+    }
 }
 
 export const checkoutComp = new Checkout(html);
