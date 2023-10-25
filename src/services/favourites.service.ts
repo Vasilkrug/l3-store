@@ -35,12 +35,19 @@ class FavouritesService {
 
     private async _updProducts() {
         const products = await this.get();
-        const length = products.length;
+        const count = products.length;
+        const favLink = document.querySelector('.favLink');
 
-        //@ts-ignore
-        document.querySelector('.favLink').innerText = String(length >= 1 ? 'Избранное' : '');
+        if (count) {
+            // @ts-ignore
+            favLink.classList.remove('hide');
+        } else {
+            // @ts-ignore
+            favLink.classList.add('hide');
+        }
+        // @ts-ignore
+        document.querySelectorAll('.js__favourite-counter').forEach(($el: HTMLElement) => ($el.innerText = String(count || '')));
     }
-
 }
 
 export const favouritesService = new FavouritesService();

@@ -11,6 +11,7 @@ class CartService {
   async addProduct(product: ProductData) {
     const products = await this.get();
     await this.set([...products, product]);
+    this._updCounters();
   }
 
   async removeProduct(product: ProductData) {

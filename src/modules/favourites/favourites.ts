@@ -1,9 +1,8 @@
 import html from './favourites.tpl.html';
-import {Component} from "../component";
-import {ProductData} from "../../../types";
-import {Product} from "../product/product";
-import {favouritesService} from "../../services/favourites.service";
-
+import {Component} from '../component';
+import {ProductData} from '../../../types';
+import {Product} from '../product/product';
+import {favouritesService} from '../../services/favourites.service';
 
 class Favourites extends Component {
     products!: ProductData[];
@@ -17,7 +16,6 @@ class Favourites extends Component {
             productComp.attach(this.view.favourites);
         });
     }
-
 }
 
 export const favouritesComp = new Favourites(html);
